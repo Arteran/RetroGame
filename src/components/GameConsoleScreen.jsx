@@ -60,6 +60,7 @@ export default function GameConsoleScreen({
             <p className="status-ok">&gt; SYSTEM BOOT: OK</p>
             <p className="status-ok">&gt; CLOWNFISH LOCATED IN SUB-VECTOR</p>
             <p className="status-text">&gt; INSTRUCTION: SPECIMEN TRACKS KINETIC INPUTS. MOVE YOUR CURSOR ACROSS THE SCREEN TO ATTRACT THE SPECIMEN.</p>
+            <p className="status-text">&gt; Hint: Maybe you should click buttons on tamagotchi?</p>
           </div>
 
           <div className="scroll-prompt">
