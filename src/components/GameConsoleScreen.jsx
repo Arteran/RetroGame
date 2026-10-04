@@ -14,6 +14,8 @@ export default function GameConsoleScreen({
   terminalActive,
   scrollPercent,
   onSubmitScore,
+  selectedSkin,
+  onSkinChange,
 }) {
   const getScreenFilter = () => {
     if (screenMode === 'green') return 'sepia(1) saturate(3) hue-rotate(90deg) contrast(1.1)'
@@ -22,7 +24,6 @@ export default function GameConsoleScreen({
   }
 
   const getScreenBgColor = () => {
-    // Surface: `#1b4d40` (27, 77, 64) -> Abyss: `#040810` (4, 8, 16)
     const r = Math.round(27 - (27 - 4) * scrollPercent)
     const g = Math.round(77 - (77 - 8) * scrollPercent)
     const b = Math.round(64 - (64 - 16) * scrollPercent)
@@ -38,30 +39,28 @@ export default function GameConsoleScreen({
         filter: getScreenFilter(),
       }}
     >
-      {/* CRT Screen Bezel Shadow & Glare */}
       <div className="screen-glare"></div>
       <div className="screen-scanlines"></div>
 
-      {/* HUD overlay */}
       <GameHUD score={score} depth={depth} oxygen={oxygen} lives={lives} />
 
-      {/* Three.js Canvas Container */}
       <div id="canvas-container">
         <canvas ref={canvasRef} id="bg"></canvas>
       </div>
 
-      {/* Scrollable Content Viewport */}
       <div className="screen-scroll-container" id="scroll-viewport" ref={scrollViewportRef}>
-        
-        {/* Stage 1: Sunlit Shallows (0m - 1000m) */}
+
         <section className="screen-section" id="stage-shallows">
-          <div className="section-glitch-title">AQUA QUEST</div>
-          <div className="section-subtitle">SPECIMEN-402 PROTOCOL</div>
-          
+          <div className="section-header">
+            <div className="section-glitch-title">AQUA QUEST</div>
+            <div className="section-subtitle">SPECIMEN-402 PROTOCOL</div>
+          </div>
+
           <div className="console-box">
             <p className="status-ok">&gt; SYSTEM BOOT: OK</p>
             <p className="status-ok">&gt; CLOWNFISH LOCATED IN SUB-VECTOR</p>
-            <p className="status-text">&gt; INSTRUCTION: SPECIMEN TRACKS KINETIC INPUTS. MOVE YOUR CURSOR ACROSS THE SCREEN SCREEN TO ATTRACT THE SPECIMEN.</p>
+            <p className="status-text">&gt; INSTRUCTION: SPECIMEN TRACKS KINETIC INPUTS. MOVE YOUR CURSOR ACROSS THE SCREEN TO ATTRACT THE SPECIMEN.</p>
+            <p className="status-text">&gt; Hint: Maybe you should click buttons on tamagotchi?</p>
           </div>
 
           <div className="scroll-prompt">
@@ -69,40 +68,30 @@ export default function GameConsoleScreen({
           </div>
         </section>
 
-        {/* Stage 2: Twilight Stratum (1000m - 3000m) */}
         <section className="screen-section" id="stage-twilight">
-          <div className="stage-tag">STAGE 02</div>
-          <h2 className="section-title">TWILIGHT ZONE</h2>
+          <div className="section-header">
+            <div className="stage-tag">STAGE 02</div>
+            <h2 className="section-title">TWILIGHT ZONE</h2>
+          </div>
           <div className="console-box warning">
             <p className="status-warn">&gt; WARNING: SOLAR RADIANCE &lt; 1.0%</p>
-            <p className="status-text">&gt; SPECIMEN METABOLISM DETECTED.</p>
-            <p className="status-text">&gt; DEPTH INCREASING. HYDROSTATIC PRESSURE LEVELS INTENSIFYING.</p>
-          </div>
-          
-          <div className="info-grid">
-            <div className="info-card">
-              <h3>CLAW VECTOR</h3>
-              <p>SPECIMEN-402 IS DYNAMICALLY ANIMATED. KEYBOARD OVERRIDES ALLOW ANIMATION SWITCHES: 1 (SWIM), 2 (BITE), 3 (IDLE).</p>
-            </div>
-            <div className="info-card">
-              <h3>DEEP METRICS</h3>
-              <p>AMBIENT LIGHTING DIMINISHES PROPORTIONALLY WITH EXPEDITION DEPTH. KEEP EXPEDITION ACTIVE.</p>
-            </div>
+            <p className="status-text">&gt; DO NOT STAND STILL. THEY ARE ALWAYS WATCHING YOU...</p>
+            <p className="status-danger">&gt; UNKNOWN PREDATOR INBOUND. PREPARE TO EVADE!</p>
           </div>
         </section>
 
-        {/* Stage 3: Abyssal Plain (3000m - 4000m) */}
         <section className="screen-section" id="stage-abyss">
-          <div className="stage-tag">STAGE 03</div>
-          <h2 className="section-title">ABYSSAL FLOOR</h2>
-          
+          <div className="section-header">
+            <div className="stage-tag">STAGE 03</div>
+            <h2 className="section-title">ABYSSAL FLOOR</h2>
+          </div>
+
           <div className="console-box danger">
             <p className="status-danger">&gt; CRITICAL DEPTH REACHED: 4000M</p>
             <p className="status-danger">&gt; ANOMALY LOCKBOX REVEALED ON SEA FLOOR</p>
             <p className="status-text">&gt; ACTION REQUIRED: CLICK LOCKBOX TO DISPENSE SPECIMEN FEED STIMULANT.</p>
           </div>
 
-          {/* Secret Terminal (Transmission Form) */}
           <div className={`transmission-terminal ${terminalActive ? 'active' : ''}`} id="terminal-form">
             <div className="terminal-header">
               <span>NEW HIGH SCORE! TRANSMIT DATA</span>

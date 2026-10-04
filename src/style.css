@@ -1,7 +1,3 @@
-/* --------------------------------------------------
-   RETRO CRT GAME CONSOLE DESIGN SYSTEM
-   -------------------------------------------------- */
-
 :root {
   --color-cabinet-bg: #222a30;
   --color-cabinet-dark: #12161a;
@@ -30,10 +26,10 @@ body {
   margin: 0;
   padding: 0;
   background-color: #0b0c10;
-  background-image: 
+  background-image:
     radial-gradient(circle at 30% 20%, #1a2230 0%, transparent 40%),
     radial-gradient(circle at 80% 70%, #111625 0%, transparent 50%),
-    repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15) 1px, transparent 1px, transparent 2px);
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -44,17 +40,14 @@ body {
   padding: 20px;
 }
 
-/* --------------------------------------------------
-   CABINET CONTAINER & FRAME
-   -------------------------------------------------- */
 #arcade-cabinet {
   background-color: var(--color-cabinet-bg);
   border: 8px solid #000;
   border-radius: 32px;
-  box-shadow: 
-    16px 16px 0px rgba(0,0,0,0.4),
-    inset -8px -8px 0px rgba(0,0,0,0.3),
-    inset 8px 8px 0px rgba(255,255,255,0.15);
+  box-shadow:
+    16px 16px 0px rgba(0, 0, 0, 0.4),
+    inset -8px -8px 0px rgba(0, 0, 0, 0.3),
+    inset 8px 8px 0px rgba(255, 255, 255, 0.15);
   width: 480px;
   max-width: 100%;
   height: 840px;
@@ -63,10 +56,9 @@ body {
   justify-content: space-between;
   padding: 24px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
-/* Top Grill & Brand */
 .cabinet-header {
   display: flex;
   justify-content: space-between;
@@ -120,13 +112,17 @@ body {
 }
 
 @keyframes pulse-led {
-  0% { opacity: 0.6; box-shadow: 0 0 2px #ff3b30; }
-  100% { opacity: 1; box-shadow: 0 0 10px #ff3b30; }
+  0% {
+    opacity: 0.6;
+    box-shadow: 0 0 2px #ff3b30;
+  }
+
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 10px #ff3b30;
+  }
 }
 
-/* --------------------------------------------------
-   CRT SCREEN VIEWPORT
-   -------------------------------------------------- */
 #screen-container {
   flex-grow: 1;
   background-color: var(--color-crt-bg-surface);
@@ -134,19 +130,18 @@ body {
   border-radius: 20px;
   position: relative;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     inset 0 0 40px rgba(0, 0, 0, 0.9),
     0px 6px 0px rgba(0, 0, 0, 0.15);
 }
 
-/* Glass Screen Glare & Scanlines Overlay */
 .screen-glare {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.04) 30%, transparent 31%, transparent 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.04) 30%, transparent 31%, transparent 100%);
   pointer-events: none;
   z-index: 15;
 }
@@ -157,7 +152,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
+  background:
     linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
     linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
   background-size: 100% 4px, 6px 100%;
@@ -165,7 +160,6 @@ body {
   z-index: 14;
 }
 
-/* Persistent HUD overlay */
 .hud-panel {
   position: absolute;
   top: 0;
@@ -175,8 +169,8 @@ body {
   border-bottom: 4px solid #000;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px 12px;
+  gap: 6px;
+  padding: 8px 16px 8px 85px;
   z-index: 12;
   font-family: var(--font-retro-tall);
   font-size: 1.4rem;
@@ -185,16 +179,9 @@ body {
   text-shadow: 0 0 4px rgba(57, 255, 20, 0.4);
 }
 
-.hud-row-top {
+.hud-row {
   display: flex;
   justify-content: space-between;
-  width: 100%;
-  align-items: center;
-}
-
-.hud-row-bottom {
-  display: flex;
-  justify-content: center;
   width: 100%;
   align-items: center;
 }
@@ -217,21 +204,31 @@ body {
   text-shadow: 0 0 4px rgba(255, 85, 0, 0.4);
 }
 
-.heart {
-  color: #ff3366;
-  text-shadow: none;
+.pixel-heart {
+  width: 15px;
+  height: 15px;
+  fill: #ff3366;
+  filter: drop-shadow(0 0 2px rgba(255, 51, 102, 0.7));
   display: inline-block;
-  margin-left: 2px;
-  animation: heart-beat 1.5s infinite;
+  margin-left: 4px;
+  vertical-align: middle;
+  transform-origin: center;
+  animation: heart-beat 1.2s steps(4) infinite;
 }
 
 @keyframes heart-beat {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
+
+  0%,
+  75%,
+  100% {
+    transform: scale(0.9);
+  }
+
+  35% {
+    transform: scale(1.15);
+  }
 }
 
-/* Three.js Canvas container */
 #canvas-container {
   position: absolute;
   top: 0;
@@ -247,9 +244,6 @@ body {
   display: block;
 }
 
-/* --------------------------------------------------
-   SCROLLABLE CONTENT INTERFACE
-   -------------------------------------------------- */
 .screen-scroll-container {
   position: absolute;
   top: 0;
@@ -258,21 +252,22 @@ body {
   bottom: 0;
   overflow-y: scroll;
   z-index: 5;
-  scrollbar-width: none; /* Hide scrollbar Firefox */
+  scrollbar-width: none;
 }
 
-/* Hide scrollbar Chrome/Safari */
 .screen-scroll-container::-webkit-scrollbar {
   display: none;
 }
 
 .screen-section {
-  min-height: 480px;
+  height: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  padding: 60px 16px 20px 16px;
+  gap: 28px;
+  padding: 76px 16px 20px 16px;
   text-align: center;
   position: relative;
 }
@@ -282,13 +277,12 @@ body {
   gap: 20px;
 }
 
-/* Pixel Titles & Headers */
 .section-glitch-title {
   font-family: var(--font-pixel);
   font-size: 2.1rem;
   color: var(--color-crt-text-cyan);
-  text-shadow: 
-    3px 3px 0px #000, 
+  text-shadow:
+    3px 3px 0px #000,
     0 0 8px rgba(0, 229, 255, 0.5);
   margin-top: 15px;
   animation: text-glitch 2s infinite steps(4);
@@ -323,7 +317,6 @@ body {
   margin: 10px 0;
 }
 
-/* Console Boxes */
 .console-box {
   background-color: rgba(0, 0, 0, 0.8);
   border: 2px solid #fff;
@@ -368,7 +361,6 @@ body {
   color: #cbd5e0;
 }
 
-/* Info Grid */
 .info-grid {
   display: flex;
   flex-direction: column;
@@ -401,12 +393,33 @@ body {
   line-height: 1.3;
 }
 
-/* Scroll prompts */
 .scroll-prompt {
-  margin-top: 25px;
+  margin-top: auto;
+  margin-bottom: 10px;
   font-family: var(--font-pixel);
   font-size: 0.55rem;
   color: var(--color-crt-text-green);
+}
+
+.section-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.section-header .stage-tag {
+  align-self: self-start;
+  margin-bottom: 30px;
+}
+
+.section-header .section-title {
+  margin: 0;
+}
+
+.section-header .section-glitch-title {
+  margin-top: 0;
+  margin-bottom: 6px;
 }
 
 .blink-text {
@@ -414,8 +427,16 @@ body {
 }
 
 @keyframes text-blink {
-  0%, 49% { opacity: 0; }
-  50%, 100% { opacity: 1; }
+
+  0%,
+  49% {
+    opacity: 0;
+  }
+
+  50%,
+  100% {
+    opacity: 1;
+  }
 }
 
 .scroll-spacer {
@@ -423,16 +444,13 @@ body {
   width: 100%;
 }
 
-/* --------------------------------------------------
-   TRANSMISSION TERMINAL (CONTACT FORM)
-   -------------------------------------------------- */
 .transmission-terminal {
   width: 100%;
   max-width: 400px;
   background-color: #040810;
   border: 3px solid var(--color-crt-text-green);
   border-radius: 12px;
-  box-shadow: 
+  box-shadow:
     0px 0px 15px rgba(57, 255, 20, 0.35),
     4px 4px 0px #000;
   padding: 16px;
@@ -444,7 +462,6 @@ body {
   transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Shown state triggered by JS */
 .transmission-terminal.active {
   opacity: 1;
   transform: translateY(0);
@@ -519,9 +536,6 @@ body {
   box-shadow: 1px 1px 0px #000;
 }
 
-/* --------------------------------------------------
-   CABINET PHYSICAL CONTROLS (D-PAD & BUTTONS)
-   -------------------------------------------------- */
 .cabinet-controls {
   display: flex;
   justify-content: space-between;
@@ -531,7 +545,7 @@ body {
   border: 6px solid #000;
   border-radius: 18px;
   margin-top: 15px;
-  box-shadow: inset 0px 4px 10px rgba(0,0,0,0.6);
+  box-shadow: inset 0px 4px 10px rgba(0, 0, 0, 0.6);
 }
 
 .control-label {
@@ -543,7 +557,6 @@ body {
   margin-top: 8px;
 }
 
-/* D-PAD */
 .dpad-container {
   display: flex;
   flex-direction: column;
@@ -561,7 +574,7 @@ body {
   background-color: #2d3748;
   border: 3px solid #000;
   cursor: pointer;
-  box-shadow: inset 2px 2px 0px rgba(255,255,255,0.1);
+  box-shadow: inset 2px 2px 0px rgba(255, 255, 255, 0.1);
   transition: background-color 0.1s;
 }
 
@@ -620,7 +633,6 @@ body {
   box-shadow: none;
 }
 
-/* SELECT / START BUTTONS */
 .center-buttons {
   display: flex;
   flex-direction: column;
@@ -661,7 +673,6 @@ body {
   color: #718096;
 }
 
-/* ACTION BUTTONS */
 .action-buttons {
   display: flex;
   flex-direction: column;
@@ -712,7 +723,6 @@ body {
   font-weight: bold;
 }
 
-/* Footer & vents */
 .cabinet-footer {
   display: flex;
   justify-content: space-between;
@@ -740,29 +750,28 @@ body {
   margin: 0;
 }
 
-/* --------------------------------------------------
-   GLITCH ANIMATIONS AND RESPONSIVE POLISH
-   -------------------------------------------------- */
-
 @keyframes text-glitch {
   0% {
     text-shadow: 3px 3px 0px #000, 0 0 8px rgba(0, 229, 255, 0.5);
   }
+
   25% {
     text-shadow: -2px 3px 0px var(--color-crt-text-orange), 0 0 8px rgba(0, 229, 255, 0.5);
   }
+
   50% {
     text-shadow: 3px -2px 0px var(--color-crt-text-green), 0 0 8px rgba(0, 229, 255, 0.5);
   }
+
   75% {
     text-shadow: 2px 2px 0px #000, -2px -2px 0px var(--color-crt-text-orange);
   }
+
   100% {
     text-shadow: 3px 3px 0px #000, 0 0 8px rgba(0, 229, 255, 0.5);
   }
 }
 
-/* Tiny console screen adjustments for smaller heights */
 @media (max-height: 880px) {
   #arcade-cabinet {
     height: 98vh;
@@ -771,9 +780,6 @@ body {
   }
   #screen-container {
     height: 380px;
-  }
-  .screen-section {
-    min-height: 380px;
   }
   .section-glitch-title {
     font-size: 1.7rem;
@@ -784,38 +790,61 @@ body {
   body {
     padding: 10px;
   }
+
   #arcade-cabinet {
     border-width: 6px;
     padding: 14px;
   }
+
   .brand-badge {
     font-size: 0.75rem;
   }
+
   .cabinet-controls {
     padding: 8px 4px;
   }
+
   .dpad {
     width: 75px;
     height: 75px;
   }
-  .dpad-button.up, .dpad-button.down {
+
+  .dpad-button.up,
+  .dpad-button.down {
     width: 25px;
     height: 27px;
     left: 25px;
   }
-  .dpad-button.left, .dpad-button.right {
+
+  .dpad-button.left,
+  .dpad-button.right {
     width: 27px;
     height: 25px;
     top: 25px;
   }
+
   .dpad-button.center {
     width: 25px;
     height: 25px;
     left: 25px;
     top: 25px;
   }
+
   .round-button {
     width: 32px;
     height: 32px;
   }
+}
+
+
+
+#tamagotchi-canvas {
+  position: absolute;
+  top: -124px;
+  left: -72px;
+  width: 240px;
+  height: 320px;
+  z-index: 100;
+  pointer-events: auto;
+  cursor: pointer;
 }

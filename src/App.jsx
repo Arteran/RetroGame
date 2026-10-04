@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { gsap } from 'gsap'
-import { initGame } from './gameEngine'
+import { initGame, initTamagotchi } from './gameEngine'
 import CabinetHeader from './components/CabinetHeader'
 import CabinetFooter from './components/CabinetFooter'
 import GameControls from './components/GameControls'
@@ -14,12 +14,15 @@ export default function App() {
   const [lives, setLives] = useState(3)
   const [screenMode, setScreenMode] = useState('standard') // 'standard', 'green', 'amber'
   const [terminalActive, setTerminalActive] = useState(false)
+  const [selectedSkin, setSelectedSkin] = useState('/clown_fish_low_poly_animated.glb')
 
   const canvasRef = useRef(null)
   const scrollViewportRef = useRef(null)
   const screenContainerRef = useRef(null)
   const formRef = useRef(null)
   const engineRef = useRef(null)
+  const tamagotchiCanvasRef = useRef(null)
+  const tamagotchiEngineRef = useRef(null)
 
   useEffect(() => {
     if (canvasRef.current && scrollViewportRef.current && screenContainerRef.current) {
@@ -34,6 +37,27 @@ export default function App() {
             setScrollPercent(percent)
           },
           onShowTerminal: () => setTerminalActive(true),
+          onDamage: () => {
+            setLives((prev) => {
+              const nextLives = Math.max(0, prev - 1);
+              if (nextLives === 0) {
+                alert('CRITICAL FAILURE: SUBMARINE DESTROYED BY PREDATORS!');
+                setScore(0);
+                setTerminalActive(false);
+                setOxygen(99);
+                setLives(3);
+                if (formRef.current) formRef.current.reset();
+                if (engineRef.current) engineRef.current.resetGame();
+                if (scrollViewportRef.current) {
+                  gsap.to(scrollViewportRef.current, { scrollTop: 0, duration: 1.5, ease: "power2.inOut" });
+                }
+              }
+              return nextLives;
+            });
+          }
+        },
+        {
+          initialSkin: selectedSkin
         }
       )
       engineRef.current = engine
@@ -45,6 +69,36 @@ export default function App() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (tamagotchiCanvasRef.current) {
+      const tgEngine = initTamagotchi(
+        tamagotchiCanvasRef.current,
+        {
+          onSkinChange: (newSkin) => setSelectedSkin(newSkin)
+        },
+        {
+          initialSkin: selectedSkin
+        }
+      )
+      tamagotchiEngineRef.current = tgEngine
+      
+      return () => {
+        if (tgEngine) {
+          tgEngine.destroy()
+        }
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (engineRef.current) {
+      engineRef.current.setFishSkin(selectedSkin)
+    }
+    if (tamagotchiEngineRef.current) {
+      tamagotchiEngineRef.current.setSkinState(selectedSkin)
+    }
+  }, [selectedSkin])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -84,6 +138,7 @@ export default function App() {
     setScore(0)
     setTerminalActive(false)
     setOxygen(99)
+    setLives(3)
     if (formRef.current) {
       formRef.current.reset()
     }
@@ -139,6 +194,8 @@ export default function App() {
 
   return (
     <div id="arcade-cabinet">
+      <canvas ref={tamagotchiCanvasRef} id="tamagotchi-canvas"></canvas>
+      
       <CabinetHeader oxygen={oxygen} />
       
       <GameConsoleScreen
@@ -154,6 +211,8 @@ export default function App() {
         terminalActive={terminalActive}
         scrollPercent={scrollPercent}
         onSubmitScore={handleSubmitScore}
+        selectedSkin={selectedSkin}
+        onSkinChange={setSelectedSkin}
       />
 
       <GameControls
