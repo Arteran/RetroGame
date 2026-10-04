@@ -4,7 +4,7 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { gsap } from 'gsap'
 
 export function initGame(canvas, scrollViewport, screenContainer, callbacks, options = {}) {
-  const { onScoreChange, onDepthChange, onShowTerminal } = callbacks;
+  const { onScoreChange, onDepthChange, onShowTerminal, onDamage } = callbacks;
   const { initialSkin = '/clown_fish_low_poly_animated.glb' } = options;
 
   let score = 0;
@@ -13,6 +13,10 @@ export function initGame(canvas, scrollViewport, screenContainer, callbacks, opt
   let isSpawning = false;
   let activePellets = [];
   let companions = [];
+  let hunters = [];
+  let huntersSpawned = false;
+  let lastCursorMoveTime = Date.now();
+  let lastDamageTime = 0;
 
   let fish = null;
   let mixer = null;
@@ -234,6 +238,8 @@ export function initGame(canvas, scrollViewport, screenContainer, callbacks, opt
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
+    lastCursorMoveTime = Date.now();
+
     raycaster.setFromCamera(mouse, camera);
     raycaster.ray.intersectPlane(plane, targetPoint);
 
@@ -422,6 +428,154 @@ export function initGame(canvas, scrollViewport, screenContainer, callbacks, opt
   handleResize();
   updateScrollMetrics();
 
+  function spawnHunters() {
+    huntersSpawned = true;
+
+    // 1. Spawn Chaser (Constant tracker)
+    loader.load('/fish_animated.glb', (gltf) => {
+      const hunterMesh = gltf.scene;
+
+      const box = new THREE.Box3().setFromObject(hunterMesh);
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const targetSize = 7.0; // Big scary predator
+      const scaleFactor = targetSize / (maxDim || 1);
+      hunterMesh.scale.setScalar(scaleFactor);
+
+      hunterMesh.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material = child.material.clone();
+          child.material.color.set('#7a000c'); // Deep crimson
+          child.material.emissive.set('#2d0003'); // Soft red glow
+          child.material.roughness = 0.3;
+        }
+      });
+
+      // Start position: left side
+      hunterMesh.position.set(-25, -34, -1);
+      scene.add(hunterMesh);
+
+      const hunterMixer = new THREE.AnimationMixer(hunterMesh);
+      let swimAction = null;
+      if (gltf.animations.length > 0) {
+        swimAction = hunterMixer.clipAction(gltf.animations[0]);
+        swimAction.play();
+      }
+
+      hunters.push({
+        type: 'chaser',
+        mesh: hunterMesh,
+        mixer: hunterMixer,
+        swimAction: swimAction,
+        speed: 0.007 // Constant slow chase speed
+      });
+    }, undefined, (err) => {
+      console.error("Error loading chaser hunter:", err);
+    });
+
+    // 2. Spawn Ambusher (Stillness charger)
+    loader.load('/nemesis/noot_fish.glb', async (gltf) => {
+      const hunterMesh = gltf.scene;
+
+      const box = new THREE.Box3().setFromObject(hunterMesh);
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const targetSize = 7.5; // Large, distinct body shape
+      const scaleFactor = targetSize / (maxDim || 1);
+      hunterMesh.scale.setScalar(scaleFactor);
+
+      // Extract textures manually due to KHR_materials_pbrSpecularGlossiness deprecation
+      let diffuseMap = null;
+      let normalMap = null;
+      try {
+        diffuseMap = await gltf.parser.getDependency('texture', 0);
+        normalMap = await gltf.parser.getDependency('texture', 1);
+      } catch (e) {
+        console.error("Error loading noot_fish textures:", e);
+      }
+
+      if (diffuseMap) {
+        diffuseMap.colorSpace = THREE.SRGBColorSpace;
+        diffuseMap.flipY = false;
+      }
+      if (normalMap) {
+        normalMap.flipY = false;
+      }
+
+      const bodyMaterial = new THREE.MeshStandardMaterial({
+        map: diffuseMap,
+        normalMap: normalMap,
+        roughness: 0.8,
+        metalness: 0.1,
+        side: THREE.DoubleSide
+      });
+
+      const eyeMaterial = new THREE.MeshStandardMaterial({
+        map: diffuseMap,
+        roughness: 0.1,
+        metalness: 0.0,
+        side: THREE.DoubleSide
+      });
+
+      hunterMesh.traverse((child) => {
+        if (child.isMesh) {
+          if (child.name.toLowerCase().includes('eye') || (child.material && child.material.name === 'Noot_Fish_eyes')) {
+            child.material = eyeMaterial;
+          } else {
+            child.material = bodyMaterial;
+          }
+        }
+      });
+
+      // Create a parent group to manage movement and orientation,
+      // which allows rotating the child model to align it correctly.
+      const hunterGroup = new THREE.Group();
+      hunterGroup.add(hunterMesh);
+
+      // Compensate for the 90-degree skeleton rotation in the model
+      hunterMesh.rotation.y = -Math.PI / 2;
+
+      // Start position: right side (applied to the parent group)
+      hunterGroup.position.set(25, -45, -2);
+      scene.add(hunterGroup);
+
+      const hunterMixer = new THREE.AnimationMixer(hunterMesh);
+
+      // Load specific animation clips
+      const idleClip = gltf.animations.find(a => a.name === 'NF_idleSwim') || gltf.animations[0];
+      const slowSwimClip = gltf.animations.find(a => a.name === 'NF_slowSwim') || gltf.animations[0];
+      const fastSwimClip = gltf.animations.find(a => a.name === 'NF_fastSwim') || gltf.animations[0];
+      const eatClip = gltf.animations.find(a => a.name === 'NF_eatFish') || gltf.animations[0];
+
+      const idleAction = idleClip ? hunterMixer.clipAction(idleClip) : null;
+      const slowSwimAction = slowSwimClip ? hunterMixer.clipAction(slowSwimClip) : null;
+      const fastSwimAction = fastSwimClip ? hunterMixer.clipAction(fastSwimClip) : null;
+      const eatAction = eatClip ? hunterMixer.clipAction(eatClip) : null;
+
+      if (idleAction) {
+        idleAction.play();
+      }
+
+      hunters.push({
+        type: 'ambusher',
+        mesh: hunterGroup, // Wrap group handles movement & collision checking
+        mixer: hunterMixer,
+        actions: {
+          idle: idleAction,
+          slowSwim: slowSwimAction,
+          fastSwim: fastSwimAction,
+          eat: eatAction
+        },
+        currentAction: idleAction,
+        speed: 0.038, // Fast charge speed
+        restPosition: new THREE.Vector3(22, -40, -2),
+        lastStoppedPosition: null
+      });
+    }, undefined, (err) => {
+      console.error("Error loading ambusher hunter:", err);
+    });
+  }
+
   const clock = new THREE.Clock();
   let animationFrameId = null;
 
@@ -465,6 +619,148 @@ export function initGame(canvas, scrollViewport, screenContainer, callbacks, opt
         companion.mesh.rotation.z += (dummy.rotation.z - companion.mesh.rotation.z) * 0.1;
 
         targetPos.copy(companion.mesh.position);
+      });
+    }
+
+    // Spawn hunters when player enters Twilight zone
+    if (scrollPercent >= 0.25 && !huntersSpawned) {
+      spawnHunters();
+    }
+
+    // Toggle visibility of hunters depending on depth
+    if (huntersSpawned && hunters.length > 0) {
+      const isVisible = scrollPercent >= 0.25;
+      hunters.forEach(h => {
+        if (h.mesh) {
+          h.mesh.visible = isVisible;
+        }
+      });
+    }
+
+    // Update hunters movement & collision
+    if (hunters.length > 0 && fish) {
+      const isPlayerStill = (Date.now() - lastCursorMoveTime) > 1200;
+
+      hunters.forEach((hunter) => {
+        if (hunter.mixer) {
+          hunter.mixer.update(delta);
+        }
+
+        if (hunter.mesh && hunter.mesh.visible) {
+          const distanceToPlayer = hunter.mesh.position.distanceTo(fish.position);
+
+          if (hunter.type === 'chaser') {
+            // Hunter 1: Always slowly swim towards the player fish
+            hunter.mesh.position.lerp(fish.position, hunter.speed);
+
+            // Look at player fish
+            dummy.position.copy(hunter.mesh.position);
+            dummy.lookAt(fish.position);
+            hunter.mesh.rotation.y += (dummy.rotation.y - hunter.mesh.rotation.y) * 0.1;
+          }
+          else if (hunter.type === 'ambusher') {
+            // Cross-fading helper for hunter animations
+            const changeAnim = (newAction) => {
+              if (!newAction || hunter.currentAction === newAction) return;
+              if (hunter.currentAction) {
+                hunter.currentAction.fadeOut(0.2);
+              }
+              newAction.reset();
+              newAction.setEffectiveTimeScale(1);
+              newAction.setEffectiveWeight(1);
+              newAction.fadeIn(0.2);
+              newAction.play();
+              hunter.currentAction = newAction;
+            };
+
+            if (isPlayerStill) {
+              // Clear stored pause position so it recalculates when player moves
+              hunter.lastStoppedPosition = null;
+
+              if (distanceToPlayer < 4.0) {
+                // State: Eating/Biting
+                if (hunter.actions.eat) {
+                  changeAnim(hunter.actions.eat);
+                }
+
+                // Keep facing the player while biting
+                dummy.position.copy(hunter.mesh.position);
+                dummy.lookAt(fish.position);
+                hunter.mesh.rotation.y += (dummy.rotation.y - hunter.mesh.rotation.y) * 0.15;
+              } else {
+                // State: Charging player
+                hunter.mesh.position.lerp(fish.position, hunter.speed);
+
+                // Face the player while charging
+                dummy.position.copy(hunter.mesh.position);
+                dummy.lookAt(fish.position);
+                hunter.mesh.rotation.y += (dummy.rotation.y - hunter.mesh.rotation.y) * 0.15;
+
+                if (hunter.actions.fastSwim) {
+                  changeAnim(hunter.actions.fastSwim);
+                }
+              }
+            } else {
+              // State: Idle at current position (doesn't return back)
+              if (!hunter.lastStoppedPosition) {
+                hunter.lastStoppedPosition = hunter.mesh.position.clone();
+              }
+
+              // Lock to the stop position and apply a gentle float
+              hunter.mesh.position.copy(hunter.lastStoppedPosition);
+              const floatY = Math.sin(clock.getElapsedTime() * 1.5) * 0.08;
+              hunter.mesh.position.y += floatY;
+
+              // Slowly rotate to track/face the player
+              dummy.position.copy(hunter.mesh.position);
+              dummy.lookAt(fish.position);
+              hunter.mesh.rotation.y += (dummy.rotation.y - hunter.mesh.rotation.y) * 0.02;
+
+              if (hunter.actions.idle) {
+                changeAnim(hunter.actions.idle);
+              }
+            }
+          }
+
+          // Collision detection (if within 3.5 units of player fish)
+          if (distanceToPlayer < 3.5) {
+            // Trigger damage if not in invulnerability cooldown
+            if (Date.now() - lastDamageTime > 2000) {
+              lastDamageTime = Date.now();
+
+              if (onDamage) {
+                onDamage();
+              }
+
+              // Camera nudge shake
+              const nudgeAmount = 6;
+              gsap.to(camera.position, {
+                x: (Math.random() - 0.5) * nudgeAmount,
+                y: (-68 * scrollPercent) + (Math.random() - 0.5) * nudgeAmount,
+                duration: 0.08,
+                yoyo: true,
+                repeat: 5,
+                onComplete: () => {
+                  camera.position.x = 0;
+                  camera.position.y = -68 * scrollPercent;
+                }
+              });
+
+              // Red flash effect on player fish
+              fish.traverse((child) => {
+                if (child.isMesh && child.material) {
+                  const origColor = child.material.color.getHex();
+                  child.material.color.set('#ff0000');
+                  setTimeout(() => {
+                    if (child.material) {
+                      child.material.color.setHex(origColor);
+                    }
+                  }, 500);
+                }
+              });
+            }
+          }
+        }
       });
     }
 
@@ -523,6 +819,15 @@ export function initGame(canvas, scrollViewport, screenContainer, callbacks, opt
       companions.forEach(comp => scene.remove(comp.mesh));
       companions = [];
 
+      // Clean up hunters
+      hunters.forEach(h => {
+        if (h.mesh) scene.remove(h.mesh);
+      });
+      hunters = [];
+      huntersSpawned = false;
+      lastDamageTime = 0;
+      lastCursorMoveTime = Date.now();
+
       if (fish) {
         fish.position.set(0, 0, 0);
         fish.rotation.set(0, 0, 0);
@@ -540,6 +845,13 @@ export function initGame(canvas, scrollViewport, screenContainer, callbacks, opt
       }
       companions.forEach(comp => scene.remove(comp.mesh));
       companions = [];
+
+      // Clean up hunters
+      hunters.forEach(h => {
+        if (h.mesh) scene.remove(h.mesh);
+      });
+      hunters = [];
+
       renderer.dispose();
     }
   };

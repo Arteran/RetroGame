@@ -37,6 +37,24 @@ export default function App() {
             setScrollPercent(percent)
           },
           onShowTerminal: () => setTerminalActive(true),
+          onDamage: () => {
+            setLives((prev) => {
+              const nextLives = Math.max(0, prev - 1);
+              if (nextLives === 0) {
+                alert('CRITICAL FAILURE: SUBMARINE DESTROYED BY PREDATORS!');
+                setScore(0);
+                setTerminalActive(false);
+                setOxygen(99);
+                setLives(3);
+                if (formRef.current) formRef.current.reset();
+                if (engineRef.current) engineRef.current.resetGame();
+                if (scrollViewportRef.current) {
+                  gsap.to(scrollViewportRef.current, { scrollTop: 0, duration: 1.5, ease: "power2.inOut" });
+                }
+              }
+              return nextLives;
+            });
+          }
         },
         {
           initialSkin: selectedSkin
@@ -120,6 +138,7 @@ export default function App() {
     setScore(0)
     setTerminalActive(false)
     setOxygen(99)
+    setLives(3)
     if (formRef.current) {
       formRef.current.reset()
     }
